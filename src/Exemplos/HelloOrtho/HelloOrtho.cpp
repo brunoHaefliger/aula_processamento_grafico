@@ -56,9 +56,10 @@ const GLuint WIDTH = 800, HEIGHT = 600;
 const GLchar *vertexShaderSource = R"glsl(
  #version 400
  layout (location = 0) in vec3 position;
+ uniform mat4 projection;
  void main()
  {
-	 gl_Position = vec4(position.x, position.y, position.z, 1.0);
+	 gl_Position = projection * vec4(position.x, position.y, position.z, 1.0);
  }
  )glsl";
 
@@ -122,11 +123,11 @@ int main()
 	cout << "Renderer: " << renderer << endl;
 	cout << "OpenGL version supported " << version << endl;
 
-	// Definindo as dimensões da viewport com as mesmas dimensões da janela da aplicação
-	int width, height;
-	glfwGetFramebufferSize(window, &width, &height);
-	glViewport(0, 0, width, height);
+	
+	//Exercicio 3 da Lista 2
+	//glViewport(400, 100, 400, 300);
 
+	
 	// Compilando e buildando o programa de shader
 	GLuint shaderID = setupShader();
 
@@ -144,7 +145,14 @@ int main()
 	double title_countdown_s = 0.1; // Intervalo para atualizar o título da janela com o FPS.
 
 	// Criação da matriz de projeção
-	mat4 projection;
+
+	// Ex 1 Lista 2
+	//mat4 projection = ortho(-10.0,10.0,-10.0,10.0,-1.0,1.0);
+	// Ex 2 Lista 2
+	mat4 projection = ortho(0.0,800.0,600.0,0.0,-1.0,1.0);
+	
+	GLint projLoc = glGetUniformLocation(shaderID,"projection");
+	glUniformMatrix4fv(projLoc,1,GL_FALSE,value_ptr(projection));
 
 	// Loop da aplicação - "game loop"
 	while (!glfwWindowShouldClose(window))
@@ -172,6 +180,11 @@ int main()
 
 		// Checa se houveram eventos de input (key pressed, mouse moved etc.) e chama as funções de callback correspondentes
 		glfwPollEvents();
+
+		// Definindo as dimensões da viewport com as mesmas dimensões da janela da aplicação
+		int width, height;
+		glfwGetFramebufferSize(window, &width, &height);
+		glViewport(0, 0, width, height);
 
 		// Limpa o buffer de cor
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // cor de fundo
@@ -275,9 +288,9 @@ int setupGeometry()
 	GLfloat vertices[] = {
 		// x   y     z
 		// T0
-		-0.5, -0.5, 0.0,     // v0
-		 0.5, -0.5, 0.0,	 // v1
-		 0.0,  0.5, 0.0,	 // v2
+		-0.5 * 400 + 400, -0.5 * 400 + 300, 0.0 ,     // v0
+		 0.5 * 400 + 400, -0.5 * 400 + 300, 0.0 ,	 // v1
+		 0.0 * 400 + 400,  0.5 * 400 + 300, 0.0 	 // v2
 		// T1
 
 	};
