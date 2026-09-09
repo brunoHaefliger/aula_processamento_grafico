@@ -45,7 +45,10 @@ set(EXERCISES
     Exemplos/HelloOrtho
     Exercicios/Lista1/1
     Exercicios/Lista1/3
-
+    Lista1/Ex1
+    Lista1/Ex2
+    Lista1/Ex3
+    Lista1/Ex4
 )
 
 add_compile_options(-Wno-pragmas)
