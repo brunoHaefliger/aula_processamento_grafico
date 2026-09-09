@@ -33,5 +33,3 @@ cmake --build build
 Os executáveis são gerados na pasta `build/`.
 
 ---
-
-> 💡 Este repositório permanecerá **público** até o final da disciplina para fins de avaliação.
