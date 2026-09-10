@@ -47,7 +47,8 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 color;
 out vec3 vColor;
 void main() {
-    gl_Position = vec4(position, 1.0);
+    float aspect = float(800) / float(600);
+    gl_Position = vec4(position.x / aspect, position.y, position.z, 1.0);
     vColor = color;
 }
 )glsl";
@@ -138,9 +139,9 @@ GLuint setupGeometry()
     // Dados entrelaçados: x, y, z, r, g, b  (6 floats por vértice)
     GLfloat vertices[] = {
     //    x       y      z     r     g     b
-        -0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // P1 - vermelho
-         0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // P2 - verde
-         0.0f,   0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  // P3 - azul
+         0.0f,   0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // P1 - topo        - vermelho
+        -0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // P2 - baixo esq   - verde
+         0.5f,  -0.3f, 0.0f, 0.0f, 0.0f, 1.0f,  // P3 - baixo dir   - azul
     };
 
     GLuint VBO, VAO;

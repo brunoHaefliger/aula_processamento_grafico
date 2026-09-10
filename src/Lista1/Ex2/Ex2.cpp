@@ -50,7 +50,8 @@ const GLchar *vertexShaderSource = R"glsl(
 #version 400
 layout (location = 0) in vec3 position;
 void main() {
-    gl_Position = vec4(position, 1.0);
+    float aspect = float(800) / float(600);
+    gl_Position = vec4(position.x / aspect, position.y, position.z, 1.0);
 }
 )glsl";
 

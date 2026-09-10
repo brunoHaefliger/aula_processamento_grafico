@@ -7,17 +7,39 @@
  *   3 - c) Apenas pontos    (GL_POINT)
  *   4 - d) Os três modos juntos
  *   ESC - fechar
+ *
+ * Modo PNG (definir SAVE_PNG abaixo):
+ *   Renderiza os 4 modos em arquivos PNG e encerra sem abrir janela.
  */
 
+#define SAVE_PNG  
+
 #include <iostream>
+#include <vector>
 using namespace std;
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 const GLuint WIDTH = 800, HEIGHT = 600;
 
 // 0=fill, 1=wire, 2=points, 3=all
 int drawMode = 0;
+
+void saveFrame(const char *filename, int w, int h)
+{
+    vector<unsigned char> pixels(w * h * 3);
+    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+    // OpenGL tem Y=0 embaixo; PNG tem Y=0 em cima — inverte
+    for (int y = 0; y < h / 2; y++)
+        swap_ranges(pixels.begin() + y * w * 3,
+                    pixels.begin() + (y + 1) * w * 3,
+                    pixels.begin() + (h - y - 1) * w * 3);
+    stbi_write_png(filename, w, h, 3, pixels.data(), w * 3);
+    cout << "Salvo: " << filename << endl;
+}
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mode)
 {
@@ -52,9 +74,54 @@ void main() {
 GLuint setupShader();
 GLuint setupGeometry();
 
+void renderMode(GLuint VAO, GLint colorLoc, int mode)
+{
+    glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glBindVertexArray(VAO);
+
+    switch (mode)
+    {
+    case 0:
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glUniform4f(colorLoc, 0.2f, 0.5f, 0.9f, 1.0f);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        break;
+    case 1:
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        break;
+    case 2:
+        glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+        glUniform4f(colorLoc, 1.0f, 0.5f, 0.0f, 1.0f);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        break;
+    case 3:
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glUniform4f(colorLoc, 0.2f, 0.5f, 0.9f, 1.0f);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+        glUniform4f(colorLoc, 1.0f, 0.3f, 0.0f, 1.0f);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        break;
+    }
+}
+
 int main()
 {
     glfwInit();
+
+#ifdef SAVE_PNG
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // janela oculta
+#endif
+
     GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT,
         "Ex1 - [1] Fill  [2] Contorno  [3] Pontos  [4] Todos", nullptr, nullptr);
     if (!window) { glfwTerminate(); return -1; }
@@ -74,55 +141,23 @@ int main()
     glLineWidth(2.0f);
     glPointSize(12.0f);
 
+#ifdef SAVE_PNG
+    const char *names[] = { "ex1_a_fill.png", "ex1_b_contorno.png",
+                             "ex1_c_pontos.png", "ex1_d_todos.png" };
+    for (int i = 0; i < 4; i++)
+    {
+        renderMode(VAO, colorLoc, i);
+        glfwSwapBuffers(window);
+        saveFrame(names[i], w, h);
+    }
+#else
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        glClearColor(0.15f, 0.15f, 0.15f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glBindVertexArray(VAO);
-
-        switch (drawMode)
-        {
-        case 0: // a) Apenas preenchido
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            glUniform4f(colorLoc, 0.2f, 0.5f, 0.9f, 1.0f);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            break;
-
-        case 1: // b) Apenas contorno
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            break;
-
-        case 2: // c) Apenas pontos
-            glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-            glUniform4f(colorLoc, 1.0f, 0.5f, 0.0f, 1.0f);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            break;
-
-        case 3: // d) Os tres modos juntos
-            // 1) Preenchido
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            glUniform4f(colorLoc, 0.2f, 0.5f, 0.9f, 1.0f);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            // 2) Contorno sobre o fill
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            glUniform4f(colorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            // 3) Pontos sobre tudo
-            glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-            glUniform4f(colorLoc, 1.0f, 0.3f, 0.0f, 1.0f);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            break;
-        }
-
+        renderMode(VAO, colorLoc, drawMode);
         glfwSwapBuffers(window);
     }
+#endif
 
     glDeleteVertexArrays(1, &VAO);
     glfwTerminate();
@@ -150,16 +185,15 @@ GLuint setupShader()
 
 GLuint setupGeometry()
 {
-    // Dois triangulos lado a lado
     GLfloat vertices[] = {
-        // Triangulo 0 (esquerda)
-        -0.75f, -0.5f, 0.0f,
-        -0.05f, -0.5f, 0.0f,
-        -0.40f,  0.5f, 0.0f,
-        // Triangulo 1 (direita)
-         0.05f, -0.5f, 0.0f,
-         0.75f, -0.5f, 0.0f,
-         0.40f,  0.5f, 0.0f,
+        // Triangulo 0 (esquerda) — v0, v1, v2
+        -0.5f,  0.5f, 0.0f,   // v0
+        -0.5f, -0.5f, 0.0f,   // v1
+         0.0f,  0.0f, 0.0f,   // v2
+        // Triangulo 1 (direita) — v3, v4, v5
+         0.0f,  0.0f, 0.0f,   // v3
+         0.5f, -0.5f, 0.0f,   // v4
+         0.5f,  0.5f, 0.0f,   // v5
     };
 
     GLuint VBO, VAO;

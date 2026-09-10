@@ -1,16 +1,16 @@
 /*
  * Exercício 4 - Desenho livre com múltiplos VAOs e primitivas diferentes
  *
- * Cena: casa simples com sol
- *   - Chão         → GL_TRIANGLES  (2 tri = retângulo verde)
- *   - Corpo casa   → GL_TRIANGLES  (2 tri = retângulo branco)
- *   - Telhado      → GL_TRIANGLES  (1 tri = triângulo vermelho)
- *   - Porta        → GL_TRIANGLES  (2 tri = retângulo marrom)
- *   - Janela       → GL_LINE_LOOP  (quadrado azul sem fill)
- *   - Cruz janela  → GL_LINES      (2 linhas)
- *   - Sol          → GL_TRIANGLE_FAN (círculo amarelo)
- *
- * Cada forma tem seu próprio VAO e sua própria chamada de desenho (drawcall).
+ * Cena: casa em papel quadriculado (baseada no exemplo da professora)
+ *   - Corpo da casa  → GL_TRIANGLES  (2 tri = retângulo cinza claro)
+ *   - Telhado        → GL_TRIANGLES  (1 tri = triângulo vermelho escuro)
+ *   - Janela (4 panos) → GL_TRIANGLES  (4 retângulos amarelos)
+ *   - Contorno janela  → GL_LINE_LOOP
+ *   - Cruz janela      → GL_LINES
+ *   - Porta          → GL_TRIANGLES  (2 tri = retângulo marrom)
+ *   - Contorno porta   → GL_LINE_LOOP
+ *   - Contorno casa    → GL_LINE_LOOP  (borda preta)
+ *   - Cantos/vértices  → GL_POINTS
  */
 
 #include <iostream>
@@ -36,7 +36,8 @@ const GLchar *vertexShaderSource = R"glsl(
 #version 400
 layout (location = 0) in vec3 position;
 void main() {
-    gl_Position = vec4(position, 1.0);
+    float aspect = float(800) / float(600);
+    gl_Position = vec4(position.x / aspect, position.y, position.z, 1.0);
 }
 )glsl";
 
@@ -73,7 +74,6 @@ GLuint makeVAO(const vector<float> &v)
     return VAO;
 }
 
-// Monta DrawCall para um retangulo definido por (x0,y0)-(x1,y1)
 DrawCall makeRect(float x0, float y0, float x1, float y1, float r, float g, float b)
 {
     vector<float> v = {
@@ -83,11 +83,16 @@ DrawCall makeRect(float x0, float y0, float x1, float y1, float r, float g, floa
     return { makeVAO(v), 6, GL_TRIANGLES, r, g, b };
 }
 
+DrawCall makeLineLoop(vector<float> pts, float r, float g, float b)
+{
+    return { makeVAO(pts), (int)pts.size() / 3, GL_LINE_LOOP, r, g, b };
+}
+
 int main()
 {
     glfwInit();
     GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT,
-        "Ex4 - Cena com multiplos VAOs  (ESC sair)", nullptr, nullptr);
+        "Ex4 - Casa  (ESC sair)", nullptr, nullptr);
     if (!window) { glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, key_callback);
@@ -101,64 +106,83 @@ int main()
     GLint  colorLoc = glGetUniformLocation(shader, "inputColor");
     glUseProgram(shader);
     glLineWidth(2.0f);
+    glPointSize(10.0f);
 
     vector<DrawCall> scene;
 
-    // Chão (retângulo verde)
-    scene.push_back(makeRect(-1.0f, -1.0f, 1.0f, -0.35f, 0.2f, 0.55f, 0.2f));
+    // Corpo da casa (cinza claro)
+    scene.push_back(makeRect(-0.45f, -0.55f, 0.45f, 0.22f, 0.82f, 0.82f, 0.82f));
 
-    // Corpo da casa (retângulo branco)
-    scene.push_back(makeRect(-0.45f, -0.35f, 0.45f, 0.2f, 0.9f, 0.9f, 0.85f));
-
-    // Telhado (triângulo vermelho-escuro)
+    // Telhado (vermelho escuro) — pontas nas laterais da casa, pico um pouco mais alto
     {
-        vector<float> v = { -0.55f, 0.2f, 0.0f,   0.55f, 0.2f, 0.0f,   0.0f, 0.65f, 0.0f };
-        scene.push_back({ makeVAO(v), 3, GL_TRIANGLES, 0.7f, 0.2f, 0.1f });
+        vector<float> v = { -0.45f, 0.22f, 0.0f,
+                             0.45f, 0.22f, 0.0f,
+                             0.00f, 0.76f, 0.0f };
+        scene.push_back({ makeVAO(v), 3, GL_TRIANGLES, 0.75f, 0.12f, 0.12f });
     }
 
-    // Porta (retângulo marrom)
-    scene.push_back(makeRect(-0.10f, -0.35f, 0.10f, 0.05f, 0.5f, 0.3f, 0.1f));
+    // Janela — 4 panos amarelos (mais estreita)
+    //   TL, TR, BL, BR
+    float wx0 = -0.38f, wx1 = -0.25f, wx2 = -0.12f;
+    float wy0 = -0.02f, wy1 =  0.07f, wy2 =  0.16f;
+    float paneR = 0.78f, paneG = 0.85f, paneB = 0.20f;
+    scene.push_back(makeRect(wx0, wy1, wx1, wy2, paneR, paneG, paneB)); // TL
+    scene.push_back(makeRect(wx1, wy1, wx2, wy2, paneR, paneG, paneB)); // TR
+    scene.push_back(makeRect(wx0, wy0, wx1, wy1, paneR, paneG, paneB)); // BL
+    scene.push_back(makeRect(wx1, wy0, wx2, wy1, paneR, paneG, paneB)); // BR
 
-    // Janela - contorno (GL_LINE_LOOP)
+    // Contorno da janela (LINE_LOOP preto)
+    scene.push_back(makeLineLoop({
+        wx0, wy0, 0.0f,
+        wx2, wy0, 0.0f,
+        wx2, wy2, 0.0f,
+        wx0, wy2, 0.0f,
+    }, 0.0f, 0.0f, 0.0f));
+
+    // Cruz da janela (LINES preto)
     {
         vector<float> v = {
-            -0.38f, 0.00f, 0.0f,
-            -0.18f, 0.00f, 0.0f,
-            -0.18f, 0.18f, 0.0f,
-            -0.38f, 0.18f, 0.0f,
+            wx1, wy0, 0.0f,   wx1, wy2, 0.0f,  // vertical
+            wx0, wy1, 0.0f,   wx2, wy1, 0.0f,  // horizontal
         };
-        scene.push_back({ makeVAO(v), 4, GL_LINE_LOOP, 0.3f, 0.5f, 0.9f });
+        scene.push_back({ makeVAO(v), 4, GL_LINES, 0.0f, 0.0f, 0.0f });
     }
 
-    // Cruz da janela (GL_LINES: 2 segmentos = 4 vértices)
+    // Porta (marrom) — centralizada e um pouco mais baixa
+    scene.push_back(makeRect(-0.12f, -0.55f, 0.12f, -0.08f, 0.45f, 0.25f, 0.10f));
+
+    // Contorno da porta (LINE_LOOP preto)
+    scene.push_back(makeLineLoop({
+        -0.12f, -0.55f, 0.0f,
+         0.12f, -0.55f, 0.0f,
+         0.12f, -0.08f, 0.0f,
+        -0.12f, -0.08f, 0.0f,
+    }, 0.0f, 0.0f, 0.0f));
+
+    // Contorno do corpo da casa (LINE_LOOP preto)
+    scene.push_back(makeLineLoop({
+        -0.45f, -0.55f, 0.0f,
+         0.45f, -0.55f, 0.0f,
+         0.45f,  0.22f, 0.0f,
+        -0.45f,  0.22f, 0.0f,
+    }, 0.0f, 0.0f, 0.0f));
+
+    // Pontos nos cantos (POINTS preto)
     {
         vector<float> v = {
-            -0.28f, 0.00f, 0.0f,   -0.28f, 0.18f, 0.0f,  // vertical
-            -0.38f, 0.09f, 0.0f,   -0.18f, 0.09f, 0.0f,  // horizontal
+            -0.45f, -0.55f, 0.0f,
+             0.45f, -0.55f, 0.0f,
+             0.45f,  0.22f, 0.0f,
+            -0.45f,  0.22f, 0.0f,
+             0.00f,  0.76f, 0.0f,  // pico do telhado
         };
-        scene.push_back({ makeVAO(v), 4, GL_LINES, 0.3f, 0.5f, 0.9f });
-    }
-
-    // Sol (círculo amarelo, GL_TRIANGLE_FAN)
-    {
-        vector<float> v;
-        float cx = 0.72f, cy = 0.72f, r = 0.16f;
-        int   n  = 48;
-        v.push_back(cx); v.push_back(cy); v.push_back(0.0f);
-        for (int i = 0; i <= n; i++)
-        {
-            float a = 2.0f * (float)M_PI * i / n;
-            v.push_back(cx + r * cosf(a));
-            v.push_back(cy + r * sinf(a));
-            v.push_back(0.0f);
-        }
-        scene.push_back({ makeVAO(v), (int)v.size() / 3, GL_TRIANGLE_FAN, 1.0f, 0.9f, 0.1f });
+        scene.push_back({ makeVAO(v), 5, GL_POINTS, 0.0f, 0.0f, 0.0f });
     }
 
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        glClearColor(0.5f, 0.75f, 0.95f, 1.0f); // céu azul como fundo
+        glClearColor(0.20f, 0.20f, 0.20f, 1.0f); // fundo cinza escuro (papel quadriculado)
         glClear(GL_COLOR_BUFFER_BIT);
 
         for (auto &dc : scene)
