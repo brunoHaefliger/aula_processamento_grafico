@@ -2,15 +2,15 @@
  * Exercício 4 - Desenho livre com múltiplos VAOs e primitivas diferentes
  *
  * Cena: casa em papel quadriculado (baseada no exemplo da professora)
- *   - Corpo da casa  → GL_TRIANGLES  (2 tri = retângulo cinza claro)
- *   - Telhado        → GL_TRIANGLES  (1 tri = triângulo vermelho escuro)
- *   - Janela (4 panos) → GL_TRIANGLES  (4 retângulos amarelos)
- *   - Contorno janela  → GL_LINE_LOOP
- *   - Cruz janela      → GL_LINES
- *   - Porta          → GL_TRIANGLES  (2 tri = retângulo marrom)
- *   - Contorno porta   → GL_LINE_LOOP
- *   - Contorno casa    → GL_LINE_LOOP  (borda preta)
- *   - Cantos/vértices  → GL_POINTS
+ *   - Corpo da casa    -> GL_TRIANGLES  (2 tri = retângulo cinza claro)
+ *   - Telhado          -> GL_TRIANGLES  (1 tri = triângulo vermelho escuro)
+ *   - Janela (4 panos) -> GL_TRIANGLES  (4 retângulos amarelos)
+ *   - Contorno janela  -> GL_LINE_LOOP
+ *   - Cruz janela      -> GL_LINES
+ *   - Porta            -> GL_TRIANGLES  (2 tri = retângulo marrom)
+ *   - Contorno porta   -> GL_LINE_LOOP
+ *   - Contorno casa    -> GL_LINE_LOOP  (borda preta)
+ *   - Cantos/vértices  -> GL_POINTS
  */
 
 #include <iostream>
@@ -113,7 +113,7 @@ int main()
     // Corpo da casa (cinza claro)
     scene.push_back(makeRect(-0.45f, -0.55f, 0.45f, 0.22f, 0.82f, 0.82f, 0.82f));
 
-    // Telhado (vermelho escuro) — pontas nas laterais da casa, pico um pouco mais alto
+    // Telhado (vermelho escuro)
     {
         vector<float> v = { -0.45f, 0.22f, 0.0f,
                              0.45f, 0.22f, 0.0f,
@@ -148,7 +148,7 @@ int main()
         scene.push_back({ makeVAO(v), 4, GL_LINES, 0.0f, 0.0f, 0.0f });
     }
 
-    // Porta (marrom) — centralizada e um pouco mais baixa
+    // Porta (marrom)
     scene.push_back(makeRect(-0.12f, -0.55f, 0.12f, -0.08f, 0.45f, 0.25f, 0.10f));
 
     // Contorno da porta (LINE_LOOP preto)
@@ -182,7 +182,7 @@ int main()
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        glClearColor(0.20f, 0.20f, 0.20f, 1.0f); // fundo cinza escuro (papel quadriculado)
+        glClearColor(0.20f, 0.20f, 0.20f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         for (auto &dc : scene)

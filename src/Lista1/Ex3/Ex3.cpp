@@ -1,30 +1,9 @@
 /*
  * Exercício 3 - Triângulo com cores por vértice
- *   P1 (baixo-esquerda) = vermelho
- *   P2 (baixo-direita)  = verde
- *   P3 (topo)           = azul
+ *   P1 (topo) = vermelho,  P2 (baixo-esq) = verde,  P3 (baixo-dir) = azul
  *
- * ─── Resposta 3a) Configuração dos buffers ───────────────────────────────────
- *
- * 1 VBO com dados ENTRELAÇADOS (interleaved): posição xyz + cor rgb por vértice
- *
- * Layout no VBO (cada linha = 1 vértice, 6 floats = 24 bytes):
- *   [ x  y  z  r  g  b ]  ← P1
- *   [ x  y  z  r  g  b ]  ← P2
- *   [ x  y  z  r  g  b ]  ← P3
- *
- * 1 VAO com dois ponteiros de atributo:
- *   • Atributo 0 (posição): 3 floats, stride=6*sizeof(float), offset=0
- *   • Atributo 1 (cor)    : 3 floats, stride=6*sizeof(float), offset=3*sizeof(float)
- *
- * ─── Resposta 3b) Identificação no vertex shader ────────────────────────────
- *
- * layout(location = 0) in vec3 position;  → vinculado ao atributo 0 do VAO
- * layout(location = 1) in vec3 color;     → vinculado ao atributo 1 do VAO
- *
- * A cor é declarada como "out vec3 vColor" no vertex shader e
- * "in vec3 vColor" no fragment shader. A GPU interpola automaticamente
- * o valor entre os vértices (Gouraud shading).
+ * VBO entrelaçado: [ x y z r g b ] por vértice
+ * Atrib 0 -> posição (stride=6*float), Atrib 1 -> cor (offset=3*float)
  */
 
 #include <iostream>
@@ -40,7 +19,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
-// Vertex shader: recebe posição (loc 0) e cor (loc 1), passa cor interpolada ao frag
+// Vertex shader: posição (loc 0) e cor (loc 1), passa cor ao fragment
 const GLchar *vertexShaderSource = R"glsl(
 #version 400
 layout (location = 0) in vec3 position;
@@ -53,7 +32,7 @@ void main() {
 }
 )glsl";
 
-// Fragment shader: usa a cor interpolada vinda do vertex shader
+// Fragment shader: usa a cor interpolada do vertex shader
 const GLchar *fragmentShaderSource = R"glsl(
 #version 400
 in vec3 vColor;
@@ -152,12 +131,12 @@ GLuint setupGeometry()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // Atributo 0 → posição: 3 floats, stride=6*float, offset=0
+    // Atrib 0 -> posição: stride=6*float, offset=0
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
                           6 * sizeof(GLfloat), (GLvoid *)0);
     glEnableVertexAttribArray(0);
 
-    // Atributo 1 → cor: 3 floats, stride=6*float, offset=3*float
+    // Atrib 1 -> cor: stride=6*float, offset=3*float
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
                           6 * sizeof(GLfloat), (GLvoid *)(3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(1);

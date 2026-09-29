@@ -49,6 +49,12 @@ set(EXERCISES
     Lista1/Ex2
     Lista1/Ex3
     Lista1/Ex4
+    Lista2/Ex1
+    Lista2/Ex2
+    Lista2/Ex3
+    Lista2/Ex4
+    Lista2/Ex4b
+    Lista2/Ex6
 )
 
 add_compile_options(-Wno-pragmas)
